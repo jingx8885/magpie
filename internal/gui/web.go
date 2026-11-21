@@ -133,16 +133,18 @@ func StartWeb(addr, version string) (*Web, error) {
 		ReadHeaderTimeout: 30 * time.Second,
 	}
 	go w.srv.Serve(ln)
-	// Settings' AutoRestart: magpie web runs on as the new version (#2096)
-	updates.autoRestart = func() bool {
-		if restartInto(true, false, "", true) {
-			quit()
-			return true
+	if !isEmbedded() {
+		// Settings' AutoRestart: magpie web runs on as the new version (#2096)
+		updates.autoRestart = func() bool {
+			if restartInto(true, false, "", true) {
+				quit()
+				return true
+			}
+			return false
 		}
-		return false
+		updates.start()
+		news.start()
 	}
-	updates.start()
-	news.start()
 	return w, nil
 }
 
@@ -268,6 +270,12 @@ func webGuard(cookie, key string, keep time.Duration, box boxSignIn, next http.H
 		http.Redirect(rw, r, back, http.StatusSeeOther)
 	}
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		if isEmbedded() {
+			if hk := r.Header.Get("X-Magpie-Web-Key"); hk != "" && same(hk) {
+				next.ServeHTTP(rw, r)
+				return
+			}
+		}
 		// a plugin's page's files: a sandboxed frame's requests carry no
 		// cookie, and its token, which only a signed-in /api hands out,
 		// is the key (servePluginPage serves nothing without a good one)
