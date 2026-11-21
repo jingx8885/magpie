@@ -1220,6 +1220,7 @@ func Handler(w Windows, gw *gateway.Server) http.Handler {
 	pluginPageRoutes(mux, isWeb(w))
 	feedbackRoutes(mux)
 	appearanceRoutes(mux)
+	embeddedManagedRoutes(mux)
 	// the app's page closed or hidden: what its pages keep goes soon
 	// (awayPage); a write of nothing, so held's Changed passes it by
 	mux.HandleFunc("POST /api/page-away", func(rw http.ResponseWriter, r *http.Request) {
